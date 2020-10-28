@@ -14,17 +14,20 @@ import (
 const defaultListenAddr string = ":8000"
 
 func IpHandler(writer http.ResponseWriter, request *http.Request) {
-	ip, _, err := net.SplitHostPort(request.RemoteAddr)
-	if err != nil {
-		log.Println(err)
-		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	if ip, _, err := net.SplitHostPort(request.RemoteAddr); err == nil {
+		fmt.Fprintln(writer, ip)
 		return
 	}
-	fmt.Fprintln(writer, ip)
+	if net.ParseIP(request.RemoteAddr) != nil {
+		fmt.Fprintln(writer, request.RemoteAddr)
+		return
+	}
+	http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	return
 }
 
 func getArgs() (string, bool) {
-    listenAddr := flag.String("p", defaultListenAddr, "Listen address:port")
+	listenAddr := flag.String("p", defaultListenAddr, "Listen address:port")
 	useRealIp := flag.Bool("r", false, "Use RealIP header")
 	flag.Parse()
 	return *listenAddr, *useRealIp
